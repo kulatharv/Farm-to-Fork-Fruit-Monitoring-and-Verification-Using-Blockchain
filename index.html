@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Blockchain Fruit Tracking</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f9f9f9;
+        color: #333;
+    }
+
+    header {
+        background-color: #4CAF50;
+        color: white;
+        text-align: center;
+        padding: 20px 0;
+        font-size: 2em;
+        font-weight: bold;
+    }
+
+    .container {
+        width: 90%;
+        max-width: 1000px;
+        margin: 30px auto;
+        background-color: white;
+        padding: 25px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+
+    h2 {
+        color: #4CAF50;
+        margin-top: 0;
+    }
+
+    label {
+        font-weight: bold;
+    }
+
+    input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0 15px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+    }
+
+    button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        transition: 0.3s;
+    }
+
+    button:hover {
+        background-color: #45a049;
+    }
+
+    .section {
+        margin-bottom: 40px;
+    }
+
+    .table-container, .timeline-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 15px;
+    }
+
+    th, td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    /* Timeline styles */
+    .timeline {
+        position: relative;
+        margin: 20px 0;
+        padding-left: 40px;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 20px;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: #4CAF50;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+        padding: 10px 20px;
+        background: #f2f2f2;
+        border-radius: 8px;
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -24px;
+        top: 15px;
+        width: 12px;
+        height: 12px;
+        background: #4CAF50;
+        border-radius: 50%;
+    }
+
+    .timeline-item h4 {
+        margin: 0 0 5px 0;
+        color: #333;
+    }
+
+    .timeline-item p {
+        margin: 0;
+        font-size: 0.9em;
+        color: #555;
+    }
+
+    @media (max-width: 600px) {
+        input[type="text"], button {
+            width: 100%;
+        }
+    }
+</style>
+</head>
+<body>
+
+<header>Blockchain Fruit Tracking</header>
+
+<div class="container">
+
+    <div class="section">
+        <h2>Add Fruit Data</h2>
+        <label>Fruit ID:</label>
+        <input type="text" id="fruit_id" placeholder="e.g., F001">
+        <label>Name:</label>
+        <input type="text" id="name" placeholder="e.g., Apple">
+        <label>Location:</label>
+        <input type="text" id="location" placeholder="e.g., Farm">
+        <label>Status:</label>
+        <input type="text" id="status" value="harvested">
+        <button onclick="addFruit()">Add to Blockchain</button>
+    </div>
+
+    <div class="section">
+        <h2>Get Fruit History</h2>
+        <label>Enter Fruit ID:</label>
+        <input type="text" id="history_id" placeholder="e.g., F001">
+        <button onclick="getHistory()">Get History</button>
+        <div class="timeline-container" id="history_timeline"></div>
+    </div>
+
+    <div class="section">
+        <h2>View Full Blockchain</h2>
+        <button onclick="viewChain()">View Blockchain</button>
+        <div class="table-container" id="chain_table"></div>
+    </div>
+
+</div>
+
+<script>
+const API_URL = "http://127.0.0.1:8000";
+
+async function addFruit() {
+    const fruit = {
+        fruit_id: document.getElementById('fruit_id').value,
+        name: document.getElementById('name').value,
+        location: document.getElementById('location').value,
+        status: document.getElementById('status').value
+    };
+
+    const res = await fetch(`${API_URL}/add_fruit/`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(fruit)
+    });
+
+    const data = await res.json();
+    alert(data.message);
+}
+
+async function getHistory() {
+    const fruit_id = document.getElementById('history_id').value;
+    const res = await fetch(`${API_URL}/get_fruit_history/${fruit_id}`);
+    const data = await res.json();
+
+    const container = document.getElementById('history_timeline');
+    container.innerHTML = '';
+
+    if (data.history.length === 0) {
+        container.innerHTML = "No history found for this Fruit ID.";
+        return;
+    }
+
+    data.history.forEach(block => {
+        const item = document.createElement('div');
+        item.className = 'timeline-item';
+        item.innerHTML = `
+            <h4>Block #${block.index} - ${block.timestamp}</h4>
+            <p><strong>Fruit ID:</strong> ${block.data.fruit_id}</p>
+            <p><strong>Name:</strong> ${block.data.name}</p>
+            <p><strong>Location:</strong> ${block.data.location}</p>
+            <p><strong>Status:</strong> ${block.data.status}</p>
+        `;
+        container.appendChild(item);
+    });
+}
+
+async function viewChain() {
+    const res = await fetch(`${API_URL}/get_chain/`);
+    const data = await res.json();
+
+    let table = `<table>
+        <tr>
+            <th>Block Index</th>
+            <th>Timestamp</th>
+            <th>Data</th>
+            <th>Hash</th>
+            <th>Previous Hash</th>
+        </tr>`;
+
+    data.chain.forEach(block => {
+        let blockData = block.data.fruit_id ? 
+            `Fruit ID: ${block.data.fruit_id}<br>Name: ${block.data.name}<br>Location: ${block.data.location}<br>Status: ${block.data.status}` 
+            : block.data.info;
+
+        table += `<tr>
+            <td>${block.index}</td>
+            <td>${block.timestamp}</td>
+            <td>${blockData}</td>
+            <td>${block.hash}</td>
+            <td>${block.previous_hash}</td>
+        </tr>`;
+    });
+    table += `</table>`;
+    document.getElementById('chain_table').innerHTML = table;
+}
+</script>
+
+</body>
+</html>
